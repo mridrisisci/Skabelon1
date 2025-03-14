@@ -13,7 +13,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 public class Routes
 {
     private static EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-    private static ISecurityController securityController = new SecurityController();
+    private static ISecurityController securityController = new SecurityController(emf);
     private static ObjectMapper objectMapper = new ObjectMapper();
     // CONTROLLER HERE
 
@@ -37,4 +37,11 @@ public class Routes
             });
         };
     }
+
+
+    public static void setSecurityController(SecurityController securityController)
+    {
+        Routes.securityController = securityController;
+    }
+
 }

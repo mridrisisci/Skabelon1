@@ -10,7 +10,7 @@ import dk.bugelhartmann.UserDTO;
 import app.exceptions.ApiException;
 import app.exceptions.NotAuthorizedException;
 import app.exceptions.ValidationException;
-import app.daos.AccountDAO;
+import app.daos.SecurityDAO;
 import app.entities.Account;
 import app.utils.Utils;
 import io.javalin.http.ForbiddenResponse;
@@ -35,12 +35,18 @@ public class SecurityController implements ISecurityController {
     private  ObjectMapper objectMapper = new ObjectMapper();
     private static final EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
 
-    private AccountDAO accountDAO = AccountDAO.getInstance(emf);
+    private SecurityDAO securityDAO = SecurityDAO.getInstance(emf);
+
+    public SecurityController(EntityManagerFactory emf)
+    {
+        this.securityDAO = SecurityDAO.getInstance(emf);
+    }
+
     @Override
     public Handler register(){
         return (ctx)->{
             UserDTO newAccount = ctx.bodyAsClass(UserDTO.class); // deserialize http request
-            Account createdAccount = accountDAO.create(new Account(newAccount.getUsername(), newAccount.getPassword()));
+            Account createdAccount = securityDAO.create(new Account(newAccount.getUsername(), newAccount.getPassword()));
             ctx.json(new UserDTO(createdAccount.getUsername(), createdAccount.getRolesAsStrings()));
         };
     }
@@ -75,7 +81,7 @@ public class SecurityController implements ISecurityController {
             ObjectNode returnObject = objectMapper.createObjectNode(); // for sending json messages back to the client
             try {
                 UserDTO account = ctx.bodyAsClass(UserDTO.class);
-                UserDTO verifiedAccount = accountDAO.getVerifiedAccount(account.getUsername(), account.getPassword());
+                UserDTO verifiedAccount = securityDAO.getVerifiedAccount(account.getUsername(), account.getPassword());
                 String token = createToken(verifiedAccount);
 
                 ctx.status(200).json(returnObject

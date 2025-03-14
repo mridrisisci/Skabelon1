@@ -21,24 +21,24 @@ Purpose: This DAO is used for the Security Layer
 Description:
  */
 
-public class AccountDAO
+public class SecurityDAO
 {
     private GenericDAO genericDAO;
     private static EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-    private static AccountDAO instance;
-    private Logger logger = LoggerFactory.getLogger(AccountDAO.class);
+    private static SecurityDAO instance;
+    private Logger logger = LoggerFactory.getLogger(SecurityDAO.class);
 
-    private AccountDAO(EntityManagerFactory emf)
+    public SecurityDAO(EntityManagerFactory emf)
     {
         genericDAO = GenericDAO.getInstance(emf);
 
     }
 
-    public static AccountDAO getInstance(EntityManagerFactory emf)
+    public static SecurityDAO getInstance(EntityManagerFactory emf)
     {
         if (instance == null)
         {
-            instance = new AccountDAO(emf);
+            instance = new SecurityDAO(emf);
         }
         return instance;
     }
