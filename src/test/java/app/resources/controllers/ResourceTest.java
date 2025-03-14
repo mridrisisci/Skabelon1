@@ -1,7 +1,7 @@
 package app.resources.controllers;
 
 import app.config.HibernateConfig;
-import app.rest.ApplicationConfig;
+import app.config.ApplicationConfig;
 import app.rest.Routes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
