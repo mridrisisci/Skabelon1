@@ -16,6 +16,7 @@ public class ResourceTest
 
     private static final EntityManagerFactory emf = HibernateConfig.getEntityManagerFactoryForTest();
     ObjectMapper objectMapper = new ObjectMapper();
+    // declare entity variables here
 
     @BeforeAll
     static void setupAll()
