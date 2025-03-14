@@ -15,6 +15,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/*
+
+Purpose: This DAO is used for the Security Layer
+Description:
+ */
+
 public class AccountDAO
 {
     private GenericDAO genericDAO;
