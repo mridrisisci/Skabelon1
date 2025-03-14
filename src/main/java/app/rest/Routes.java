@@ -1,6 +1,7 @@
 package app.rest;
 
 import app.config.HibernateConfig;
+import app.enums.Role;
 import app.security.controllers.ISecurityController;
 import app.security.controllers.SecurityController;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +32,7 @@ public class Routes
             });
             path("/secured", () ->
             {
-                get("demo", ctx -> ctx.json(objectMapper.createObjectNode().put("demo","its friday bitch")), Role.USER);
+                get("demo", ctx -> ctx.json(objectMapper.createObjectNode().put("demo","its friday bitch")), Role.ACCOUNT);
 
             });
         };
