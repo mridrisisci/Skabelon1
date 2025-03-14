@@ -8,6 +8,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Data
@@ -15,7 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Table(name = "accounts")
 @NamedQueries(@NamedQuery(name = "User.deleteAllRows", query = "DELETE from Account"))
-public class Account implements ISecurityUser
+public class Account implements ISecurityAccount
 {
 
     @Id
@@ -37,6 +38,13 @@ public class Account implements ISecurityUser
         this.password = BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
+    @Override
+    public Set<String> getRolesAsStrings()
+    {
+
+        return roles.stream()
+            .map(Role::getName).collect(Collectors.toSet());
+    }
     @Override
     public boolean verifyPassword(String pw)
     {
