@@ -10,7 +10,7 @@ import dk.bugelhartmann.UserDTO;
 import app.exceptions.ApiException;
 import app.exceptions.NotAuthorizedException;
 import app.exceptions.ValidationException;
-import app.daos.UserDAO;
+import app.daos.AccountDAO;
 import app.entities.Account;
 import app.utils.Utils;
 import io.javalin.http.ForbiddenResponse;
@@ -35,13 +35,13 @@ public class SecurityController implements ISecurityController {
     private  ObjectMapper objectMapper = new ObjectMapper();
     private static final EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
 
-    private UserDAO userDAO = UserDAO.getInstance(emf);
+    private AccountDAO accountDAO = AccountDAO.getInstance(emf);
     @Override
     public Handler register(){
         return (ctx)->{
-            UserDTO newUser = ctx.bodyAsClass(UserDTO.class); // deserialize http request
-            User createdUser = userDAO.create(new User(newUser.getUsername(), newUser.getPassword()));
-            ctx.json(new UserDTO(createdUser.getUsername(), createdUser.getRolesAsStrings()));
+            UserDTO newAccount = ctx.bodyAsClass(UserDTO.class); // deserialize http request
+            Account createdAccount = accountDAO.create(new Account(newAccount.getUsername(), newAccount.getPassword()));
+            ctx.json(new UserDTO(createdAccount.getUsername(), createdAccount.getRolesAsStrings()));
         };
     }
 
@@ -74,13 +74,13 @@ public class SecurityController implements ISecurityController {
         return (ctx) -> {
             ObjectNode returnObject = objectMapper.createObjectNode(); // for sending json messages back to the client
             try {
-                UserDTO user = ctx.bodyAsClass(UserDTO.class);
-                UserDTO verifiedUser = userDAO.getVerifiedUser(user.getUsername(), user.getPassword());
-                String token = createToken(verifiedUser);
+                UserDTO account = ctx.bodyAsClass(UserDTO.class);
+                UserDTO verifiedAccount = accountDAO.getVerifiedAccount(account.getUsername(), account.getPassword());
+                String token = createToken(verifiedAccount);
 
                 ctx.status(200).json(returnObject
                     .put("token", token)
-                    .put("username", verifiedUser.getUsername()));
+                    .put("username", verifiedAccount.getUsername()));
 
             } catch (EntityNotFoundException | ValidationException e) {
                 ctx.status(401);
@@ -148,21 +148,21 @@ public class SecurityController implements ISecurityController {
             if (isOpenEndpoint(allowedRoles))
                 return;
             // 2. Get user and ensure it is not null
-            UserDTO user = ctx.attribute("user");
-            if (user == null) {
-                throw new ForbiddenResponse("No user was added from the token");
+            UserDTO account = ctx.attribute("account");
+            if (account == null) {
+                throw new ForbiddenResponse("No account was added from the token");
 //                throw new dk.cphbusiness.exceptions.ApiException(401, "No user was added from token");
             }
 
             // 3. See if any role matches
-            if (!userHasAllowedRole(user, allowedRoles))
-                throw new ForbiddenResponse("User was not authorized with roles: " + user.getRoles() + ". Needed roles are: " + allowedRoles);
+            if (!userHasAllowedRole(account, allowedRoles))
+                throw new ForbiddenResponse("Account was not authorized with roles: " + account.getRoles() + ". Needed roles are: " + allowedRoles);
 //                throw new ApiException(403,"User was not authorized with roles: "+ user.getRoles()+". Needed roles are: "+ allowedRoles);
         };
     }
 
-    private static boolean userHasAllowedRole(UserDTO user, Set<String> allowedRoles) {
-        return user.getRoles().stream()
+    private static boolean userHasAllowedRole(UserDTO account, Set<String> allowedRoles) {
+        return account.getRoles().stream()
             .anyMatch(role -> allowedRoles.contains(role.toUpperCase()));
     }
 
@@ -178,7 +178,7 @@ public class SecurityController implements ISecurityController {
         }
         return false;
     }
-    private String createToken(UserDTO user) {
+    private String createToken(UserDTO account) {
         try {
             String ISSUER;
             String TOKEN_EXPIRE_TIME;
@@ -193,7 +193,7 @@ public class SecurityController implements ISecurityController {
                 TOKEN_EXPIRE_TIME = Utils.getPropertyValue("TOKEN_EXPIRE_TIME", "config.properties");
                 SECRET_KEY = Utils.getPropertyValue("SECRET_KEY", "config.properties");
             }
-            return tokenSecurity.createToken(user, ISSUER, TOKEN_EXPIRE_TIME, SECRET_KEY);
+            return tokenSecurity.createToken(account, ISSUER, TOKEN_EXPIRE_TIME, SECRET_KEY);
         } catch (Exception e) {
             e.printStackTrace();
             throw new ApiException(500, "Could not create token");
