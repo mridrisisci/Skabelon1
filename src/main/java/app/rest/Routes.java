@@ -44,4 +44,6 @@ public class Routes
         Routes.securityController = securityController;
     }
 
+    // add setter methods here for other controllers
+
 }
