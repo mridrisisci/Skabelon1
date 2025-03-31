@@ -1,125 +1,94 @@
 package app.daos;
 
-import app.config.HibernateConfig;
-import app.entities.Role;
-import app.entities.Account;
-import app.exceptions.ValidationException;
+import dat.entities.UserAccount;
+import dat.enums.Roles;
+import dat.exceptions.DaoException;
+import dat.exceptions.ValidationException;
 import dk.bugelhartmann.UserDTO;
-import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-
-Purpose: This DAO is used for the Security Layer
-Description:
- */
-
-public class SecurityDAO
+public class SecurityDAO extends GenericDAO implements ISecurityDAO
 {
-    private GenericDAO genericDAO;
-    private static EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-    private static SecurityDAO instance;
-    private Logger logger = LoggerFactory.getLogger(SecurityDAO.class);
+    private final Logger logger = LoggerFactory.getLogger(SecurityDAO.class);
 
     public SecurityDAO(EntityManagerFactory emf)
     {
-        genericDAO = GenericDAO.getInstance(emf);
-
+        super(emf);
     }
 
-    public static SecurityDAO getInstance(EntityManagerFactory emf)
+    @Override
+    public UserDTO getVerifiedUser(String username, String password) throws ValidationException, DaoException
     {
-        if (instance == null)
+
+        UserAccount userAccount = super.getById(UserAccount.class, username); //Throws DaoException if user not found
+        if (!userAccount.verifyPassword(password))
         {
-            instance = new SecurityDAO(emf);
+            logger.error("{} {}", userAccount.getUniLogin(), userAccount.getPassword());
+            throw new ValidationException("Password does not match");
         }
-        return instance;
+        return new UserDTO(userAccount.getUniLogin(), userAccount.getRoles()
+                                                    .stream()
+                                                    .map(Roles::toString)
+                                                    .collect(Collectors.toSet()));
+
     }
 
-    public Account create(Account account)
+    @Override
+    public UserAccount createUser(String username, String password)
     {
-        try (var em = emf.createEntityManager())
+        UserAccount userAccount = new UserAccount(username, password);
+        userAccount.addRole(Roles.USER_READ);
+        try
         {
-            Set<Role> newRoleSet = new HashSet<>();
-            if (account.getRoles().size() == 0)
-            {
-                Role accountRole = em.find(Role.class, "account");
-                if (accountRole == null)
-                {
-                    accountRole = new Role("account");
-                    em.persist(accountRole);
-                }
-                account.addRole(accountRole);
-            }
-            account.getRoles().forEach(role ->
-            {
-                Role foundRole = em.find(Role.class, role.getName());
-                if (foundRole == null)
-                {
-                    throw new EntityNotFoundException("no role found with this id");
-                } else
-                {
-                    newRoleSet.add(foundRole);
-                }
-            });
-            account.setRoles(newRoleSet);
-            em.getTransaction().begin();
-            em.persist(account);
-            em.getTransaction().commit();
-        } catch (Exception e)
-        {
-            logger.error("Error creating account: " + e.getMessage());
-            return null;
+            userAccount = super.create(userAccount);
+            logger.info("User created (username {})", username);
+            return userAccount;
         }
-        return account;
-    }
-
-    public Role createRole(Role role)
-    {
-        try (EntityManager em = emf.createEntityManager())
+        catch (Exception e)
         {
-            em.getTransaction().begin();
-            em.persist(role);
-            em.getTransaction().commit();
-            return role;
+            logger.error("Error creating user", e);
+            throw new EntityExistsException("Error creating user", e);
         }
     }
 
-    public UserDTO getVerifiedAccount(String username, String password) throws ValidationException
+    @Override
+    public UserAccount addRoleToUser(String username, Roles role)
     {
-        try (EntityManager em = emf.createEntityManager())
+        UserAccount foundUser = super.getById(UserAccount.class, username);
+        foundUser.addRole(role);
+        try
         {
-            Account account = em.find(Account.class, username);
-            if (account == null)
-            {
-                throw new EntityNotFoundException("User not found" + username);
-            }
-            account.getRoles().size();
-            if (!account.verifyPassword(password))
-            {
-                throw new ValidationException("Wrong password");
-            }
-            return new UserDTO(account.getUsername(), account.getRoles().stream()
-                .map(r -> r.getName()).collect(Collectors.toSet()));
+            foundUser = super.update(foundUser);
+            logger.info("Role added to user (username {}, role {})", username, role);
+            return foundUser;
+        }
+        catch (Exception e)
+        {
+            logger.error("Error adding role to user", e);
+            throw new DaoException("Error adding role to user", e);
         }
     }
 
-    public void updateAccount(Account account)
+    @Override
+    public UserAccount removeRoleFromUser(String username, Roles role)
     {
-
+        UserAccount foundUserAccount = super.getById(UserAccount.class, username);
+        foundUserAccount.removeRole(role);
+        try
+        {
+            foundUserAccount = super.update(foundUserAccount);
+            logger.info("Role removed from user (username {}, role {})", username, role);
+            return foundUserAccount;
+        }
+        catch (Exception e)
+        {
+            logger.error("Error removing role from user", e);
+            throw new DaoException("Error removing role from user", e);
+        }
     }
-
-    public void deleteAccount (Account account)
-    {
-
-    }
-
-
 }
