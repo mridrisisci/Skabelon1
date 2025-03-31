@@ -1,20 +1,28 @@
-package app.rest;
+package app.routes;
 
 import app.config.HibernateConfig;
-import app.security.controllers.ISecurityController;
-import app.security.controllers.SecurityController;
+import app.controllers.IController;
+import app.controllers.ISecurityController;
+import app.controllers.SecurityController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.apibuilder.EndpointGroup;
 import jakarta.persistence.EntityManagerFactory;
+
+import java.util.Map;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class Routes
 {
-    private static EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
-    private static ISecurityController securityController = new SecurityController(emf);
-    private static ObjectMapper objectMapper = new ObjectMapper();
-    // CONTROLLER HERE
+    private final ISecurityController securityController;
+    private final ObjectMapper jsonMapper = new ObjectMapper();
+    // initialize controllers here
+
+    public Routes(Map<String, IController> controllers)
+    {
+        this.securityController = (SecurityController) controllers.get("security");
+        // insert controllers here
+    }
 
     public static EndpointGroup getRoutes()
     {
@@ -26,12 +34,11 @@ public class Routes
             });
             path("/auth", () ->
             {
-                post("/register", securityController.register());
-                post("/login", securityController.login());
+                post("/register", (ctx) -> securityController.register(ctx));
+                post("/login", (ctx) -> securityController.login(ctx));
             });
-            path("/secured", () ->
+            path("/protected", () ->
             {
-                get("demo", ctx -> ctx.json(objectMapper.createObjectNode().put("demo","its friday bitch")), Role.ACCOUNT);
 
             });
         };

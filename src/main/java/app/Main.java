@@ -3,7 +3,7 @@ package app;
 import app.config.HibernateConfig;
 import app.daos.SecurityDAO;
 import app.config.ApplicationConfig;
-import app.rest.Routes;
+import app.routes.Routes;
 import app.security.controllers.SecurityController;
 import jakarta.persistence.EntityManagerFactory;
 
