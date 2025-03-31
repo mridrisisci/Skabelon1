@@ -2,7 +2,10 @@ package app.resources.controllers;
 
 import app.config.HibernateConfig;
 import app.config.ApplicationConfig;
+import app.controllers.IController;
+import app.controllers.SecurityController;
 import app.routes.Routes;
+import app.utils.Populator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import jakarta.persistence.EntityManager;
@@ -10,6 +13,9 @@ import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -20,15 +26,19 @@ public class ResourceTest
     private static final EntityManagerFactory emf = HibernateConfig.getEntityManagerFactoryForTest();
     private final Logger logger = LoggerFactory.getLogger(ResourceTest.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private Populator populator;
     // declare entity variables here
 
     @BeforeAll
     static void beforeAll()
     {
+        final Map<String, IController> controllers = new HashMap<>();
+        controllers.put("security", new SecurityController(emf));
+        Routes routes = new Routes(controllers);
         ApplicationConfig
             .getInstance()
             .initiateServer()
-            .setRoute(Routes.getRoutes())
+            .setRoute(routes.getRoutes())
             .handleExceptions()
             .checkSecurityRoles()
             .startServer(7777);
