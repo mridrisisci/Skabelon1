@@ -1,12 +1,10 @@
 package app.routes;
 
-import app.config.HibernateConfig;
 import app.controllers.IController;
 import app.controllers.ISecurityController;
 import app.controllers.SecurityController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.apibuilder.EndpointGroup;
-import jakarta.persistence.EntityManagerFactory;
 
 import java.util.Map;
 
@@ -24,7 +22,7 @@ public class Routes
         // insert controllers here
     }
 
-    public static EndpointGroup getRoutes()
+    public EndpointGroup getRoutes()
     {
         return () ->
         {
@@ -43,13 +41,5 @@ public class Routes
             });
         };
     }
-
-
-    public static void setSecurityController(SecurityController securityController)
-    {
-        Routes.securityController = securityController;
-    }
-
-    // add setter methods here for other controllers
 
 }
