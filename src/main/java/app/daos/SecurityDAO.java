@@ -1,9 +1,8 @@
 package app.daos;
-
-import dat.entities.UserAccount;
-import dat.enums.Roles;
-import dat.exceptions.DaoException;
-import dat.exceptions.ValidationException;
+import app.entities.UserAccount;
+import app.enums.Roles;
+import app.exceptions.DaoException;
+import app.exceptions.ValiappionException;
 import dk.bugelhartmann.UserDTO;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManagerFactory;
@@ -22,27 +21,27 @@ public class SecurityDAO extends GenericDAO implements ISecurityDAO
     }
 
     @Override
-    public UserDTO getVerifiedUser(String username, String password) throws ValidationException, DaoException
+    public UserDTO getVerifiedUser(String username, String password) throws ValiappionException, DaoException
     {
 
         UserAccount userAccount = super.getById(UserAccount.class, username); //Throws DaoException if user not found
         if (!userAccount.verifyPassword(password))
         {
-            logger.error("{} {}", userAccount.getUniLogin(), userAccount.getPassword());
-            throw new ValidationException("Password does not match");
+            logger.error("{} {}", userAccount.getUsername(), userAccount.getPassword());
+            throw new ValiappionException("Password does not match");
         }
-        return new UserDTO(userAccount.getUniLogin(), userAccount.getRoles()
-                                                    .stream()
-                                                    .map(Roles::toString)
-                                                    .collect(Collectors.toSet()));
+        return new UserDTO(userAccount.getUsername(), userAccount.getRoles()
+            .stream()
+            .map(Roles::toString)
+            .collect(Collectors.toSet()));
 
     }
 
     @Override
-    public UserAccount createUser(String username, String password)
+    public UserAccount create(String username, String password)
     {
         UserAccount userAccount = new UserAccount(username, password);
-        userAccount.addRole(Roles.USER_READ);
+        userAccount.addRole(Roles.USER);
         try
         {
             userAccount = super.create(userAccount);
@@ -57,13 +56,13 @@ public class SecurityDAO extends GenericDAO implements ISecurityDAO
     }
 
     @Override
-    public UserAccount addRoleToUser(String username, Roles role)
+    public UserAccount addRole(String username, Roles role)
     {
         UserAccount foundUser = super.getById(UserAccount.class, username);
         foundUser.addRole(role);
         try
         {
-            foundUser = super.update(foundUser);
+            foundUser = super.upappe(foundUser);
             logger.info("Role added to user (username {}, role {})", username, role);
             return foundUser;
         }
@@ -75,13 +74,13 @@ public class SecurityDAO extends GenericDAO implements ISecurityDAO
     }
 
     @Override
-    public UserAccount removeRoleFromUser(String username, Roles role)
+    public UserAccount removeRole(String username, Roles role)
     {
         UserAccount foundUserAccount = super.getById(UserAccount.class, username);
         foundUserAccount.removeRole(role);
         try
         {
-            foundUserAccount = super.update(foundUserAccount);
+            foundUserAccount = super.upappe(foundUserAccount);
             logger.info("Role removed from user (username {}, role {})", username, role);
             return foundUserAccount;
         }
