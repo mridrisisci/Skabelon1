@@ -82,6 +82,9 @@ public class SecurityController implements ISecurityController
             logger.error("Error logging in user", e);
             throw new ApiException(401, "Could not verify user", e);
             //ctx.status(HttpStatus.UNAUTHORIZED).json(new ErrorMessage("Could not verify user " + e.getMessage()));
+        } catch (ValidationException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
